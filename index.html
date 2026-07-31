@@ -1,0 +1,4616 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ヴァインランド 相関図</title>
+  <script src="https://unpkg.com/vis-network@9.1.9/dist/vis-network.min.js"></script>
+  <link href="https://unpkg.com/vis-network@9.1.9/dist/dist/vis-network.min.css" rel="stylesheet" type="text/css" />
+  <style>
+    body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #111827; }
+    .app { display: grid; grid-template-rows: auto 1fr; height: 100vh; }
+    .toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 12px 16px; background: white; border-bottom: 1px solid #e5e7eb; }
+    .toolbar input[type="text"] { padding: 8px 10px; min-width: 260px; border: 1px solid #cbd5e1; border-radius: 8px; }
+    .toolbar button { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; cursor: pointer; }
+    .toolbar button:hover { background: #f1f5f9; }
+    .legend { display: flex; gap: 12px; align-items: center; font-size: 13px; color: #475569; }
+    .dot { display: inline-block; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+    .dot.large { width: 16px; height: 16px; background: #f59e0b; border: 1px solid #b45309; }
+    .dot.medium { width: 12px; height: 12px; background: #60a5fa; border: 1px solid #2563eb; }
+    .dot.small { width: 10px; height: 10px; background: #d1d5db; border: 1px solid #6b7280; }
+    #network { width: 100%; height: 100%; background: #f8fafc; }
+    .status { font-size: 13px; color: #475569; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="toolbar">
+      <input id="searchBox" type="text" placeholder="キャラクター名で検索（例: プレーリー）" />
+      <button id="searchBtn">検索して移動</button>
+      <button id="resetBtn">全体表示</button>
+      <label><input type="checkbox" id="physicsToggle" checked /> 物理シミュレーション</label>
+      <div class="legend">
+        <span><span class="dot large"></span>主要人物</span>
+        <span><span class="dot medium"></span>準主要人物</span>
+        <span><span class="dot small"></span>その他</span>
+      </div>
+      <div class="status">ノード 113 / エッジ 142</div>
+    </div>
+    <div id="network"></div>
+  </div>
+
+  <script>
+const networkData = {
+  "nodes": [
+    {
+      "id": 1,
+      "label": "ゾイド・ホイーラー",
+      "title": "<div style='max-width:320px'><b>ゾイド・ホイーラー</b><br><b>English:</b> Zoyd Wheeler<br><b>重要度・分類:</b> 主要人物<br><b>説明:</b> 元サーフ／ロックバンドのキーボード奏者で、60年代を引きずるヒッピーの生き残り。精神障害手当を受け続ける資格を示すため、毎年恒例で窓ガラスに突っ込むパフォーマンスを演じる。北カリフォルニアのヴァインランド郡で娘と暮らす／元ヒッピーのキーボード奏者。北カリフォルニアのヴァインランドで娘プレーリーを育てる。生活保障の資格維持のため、毎年テレビの前で「発狂」を演じる。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 2,
+      "label": "プレーリー・ホイーラー",
+      "title": "<div style='max-width:320px'><b>プレーリー・ホイーラー</b><br><b>English:</b> Prairie Wheeler<br><b>重要度・分類:</b> 主要人物<br><b>説明:</b> 14歳。ピザ店でアルバイトしながら、赤ん坊の自分を置いて消えた母フレネシの正体と過去を追う。物語のもう一つの中心／ゾイドとフレネシの十代の娘。失踪した母の過去を追い、1960年代の政治運動と政府弾圧の記憶に接近する。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 3,
+      "label": "フレネシ・ゲイツ",
+      "title": "<div style='max-width:320px'><b>フレネシ・ゲイツ</b><br><b>English:</b> Frenesi Margaret Gates<br><b>重要度・分類:</b> 主要人物<br><b>説明:</b> 60年代の映像ゲリラ集団〈24フレーム／秒〉のカメラウーマン。制服の男に抗しがたく惹かれる性癖からブロック・ヴォンドの愛人にして密告者となり、運動を内側から崩壊させた。以後は連邦政府の管理下で暮らす／急進派の映像集団24fpsに所属した撮影者・監督。権力者の制服に惹かれる性向を持ち、ブロック・ヴォンドへの協力によって仲間を裏切る。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 4,
+      "label": "ブロック・ヴォンド",
+      "title": "<div style='max-width:320px'><b>ブロック・ヴォンド</b><br><b>English:</b> Brock Vond<br><b>重要度・分類:</b> 権力側／主要人物<br><b>説明:</b> 連邦検事。60年代の学生運動を潰すために摘発と「更生キャンプ」を仕切った、国家権力の権化。フレネシへの執着を捨てられず、80年代にはプレーリーの奪取をもくろむ／司法省系の連邦検事・秘密工作責任者。学生運動の弾圧と再教育プログラムを進め、フレネシとプレーリーを心理的・制度的に支配しようとする。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 5,
+      "label": "DL・チェイステイン（ダリル・ルイーズ）",
+      "title": "<div style='max-width:320px'><b>DL・チェイステイン（ダリル・ルイーズ）</b><br><b>English:</b> DL Chastain (Darryl Louise Chastain)<br><b>重要度・分類:</b> 主要人物<br><b>説明:</b> 日本で暗殺忍術を仕込まれたくの一。60年代からフレネシの相棒で、80年代にはプレーリーの護衛役となる／女性忍者として訓練を受けた活動家。24fpsの警護担当でフレネシの親友。誤ってタケシに「忍者の死の一撃」を施し、償いとして彼を守る。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 6,
+      "label": "文茂田武（タケシ）",
+      "title": "<div style='max-width:320px'><b>文茂田武（タケシ）</b><br><b>English:</b> Takeshi Fumimota<br><b>重要度・分類:</b> 主要人物<br><b>説明:</b> カルマ調整師。因果の帳尻を合わせる商売で、死にきれない者（シンデルロ）たちの案件を引き受ける。DLに「一年殺し」をかけられた縁から彼女と組むことになる／日本人の保険調査員から「カルマ調整人」へ転じる。DLにブロックと誤認され、時間差で死ぬ技を受けたため、DLと長期の相棒関係になる。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 7,
+      "label": "ヘクター・スニーガ",
+      "title": "<div style='max-width:320px'><b>ヘクター・スニーガ</b><br><b>English:</b> Hector Zuñiga<br><b>重要度・分類:</b> 権力側／準主要人物<br><b>説明:</b> 麻薬取締局（DEA）捜査官。重度のテレビ中毒で施設への入院と脱走を繰り返す。60年代を題材にした映画を撮る野望を抱く、憎めない追跡者／DEA捜査官。ゾイドを情報提供者にしようと長年追う一方、テレビの警察番組に依存する。映画企画を立ち上げる。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 8,
+      "label": "サーシャ・ゲイツ",
+      "title": "<div style='max-width:320px'><b>サーシャ・ゲイツ</b><br><b>English:</b> Sasha Gates<br><b>重要度・分類:</b> ゲイツ＝トラヴァース家／準主要人物<br><b>説明:</b> フレネシの母。ハリウッドで赤狩りに遭った筋金入りの左翼で、労働運動の家系の記憶を娘と孫に受け渡す／フレネシの母、プレーリーの祖母。労働運動とハリウッド左派の伝統を引き継ぐ人物で、歌手・脚本読みにも携わった。索引では旧姓・家系としてトラヴァースにつながる。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 9,
+      "label": "ハッブ・ゲイツ",
+      "title": "<div style='max-width:320px'><b>ハッブ・ゲイツ</b><br><b>English:</b> Hubbell (Hub) Gates<br><b>重要度・分類:</b> ゲイツ＝トラヴァース家／準主要人物<br><b>説明:</b> ハリウッドの照明技師。組合員だが政治的には妻ほど過激ではない／フレネシの父。映画撮影の照明技師で、ハリウッドの政治的ブラックリストに巻き込まれた。後年、急進性を失い家族と離れる。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 10,
+      "label": "ジェス・トラヴァース",
+      "title": "<div style='max-width:320px'><b>ジェス・トラヴァース</b><br><b>English:</b> Jess Traverse<br><b>重要度・分類:</b> ゲイツ＝トラヴァース家<br><b>説明:</b> 木材産業の労働組合オルグ。資本側が仕組んだ「事故」で下半身不随になる。一族に語り継がれる抵抗の源</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 11,
+      "label": "ユーラ・ベッカー",
+      "title": "<div style='max-width:320px'><b>ユーラ・ベッカー</b><br><b>English:</b> Eula Becker / Eula Traverse<br><b>重要度・分類:</b> ゲイツ＝トラヴァース家／脇役<br><b>説明:</b> ジェスの妻。ジャズバンドの歌手をしていたこともある、組合運動のなかで育った女性／サーシャの母。ベッカー家とトラヴァース家を結ぶ年長世代。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 12,
+      "label": "クロッカー・“バッド”・スキャントリング",
+      "title": "<div style='max-width:320px'><b>クロッカー・“バッド”・スキャントリング</b><br><b>English:</b> Crocker &quot;Bad&quot; Scantling<br><b>重要度・分類:</b> ゲイツ＝トラヴァース家<br><b>説明:</b> 雇用者協会の手先。ジェス・トラヴァースを下半身不随に追い込んだ張本人</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 13,
+      "label": "エディ・エンリコ",
+      "title": "<div style='max-width:320px'><b>エディ・エンリコ</b><br><b>English:</b> Eddie Enrico<br><b>重要度・分類:</b> ゲイツ＝トラヴァース家／端役<br><b>説明:</b> ジャズバンド「ホンコン・ホットショッツ」のリーダー。ユーラを歌手として雇っていた／1940年代サンフランシスコのバンドリーダー。若いサーシャの歌手時代に関わる。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 14,
+      "label": "ウィード・アートマン",
+      "title": "<div style='max-width:320px'><b>ウィード・アートマン</b><br><b>English:</b> Weed Atman<br><b>重要度・分類:</b> 24fps・学生運動／準主要人物<br><b>説明:</b> サーフ大学の数学教授。「ロックンロール人民共和国」の指導者に祭り上げられ、フレネシと関係を持ち、密告と工作の果てに射殺される。以後シンデルロとしてこの世に留まる／数学教授。警察との衝突を契機に学生運動の指導者へ祭り上げられ、人民ロックンロール共和国PR3の象徴となる。死後はサナトイドとして存在する。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 15,
+      "label": "レックス・スナヴル",
+      "title": "<div style='max-width:320px'><b>レックス・スナヴル</b><br><b>English:</b> Rex Snuvvle<br><b>重要度・分類:</b> 24fps・学生運動／準主要人物<br><b>説明:</b> サーフ大学の学生活動家。ウィードが裏切り者だと信じ込まされ、引き金を引いてしまう／東南アジア研究の大学院生で急進派活動家。妄想と政治的疑念をフレネシに刺激され、ウィードを射殺する。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 16,
+      "label": "ディッツァ・ピスク・フェルドマン",
+      "title": "<div style='max-width:320px'><b>ディッツァ・ピスク・フェルドマン</b><br><b>English:</b> Ditzah Pisk Feldman<br><b>重要度・分類:</b> 24fps・学生運動／準主要人物<br><b>説明:</b> 〈24フレーム／秒〉の映像編集者。地下に隠し持っていたフィルムをプレーリーに見せ、母の過去を開いてみせる／アナキストで24fpsのフィルム編集者。1984年には過去のフィルム資料を保管し、プレーリーに母の歴史を見せる。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 17,
+      "label": "ズィピ・ピスク",
+      "title": "<div style='max-width:320px'><b>ズィピ・ピスク</b><br><b>English:</b> Zipi Pisk<br><b>重要度・分類:</b> 24fps・学生運動／脇役<br><b>説明:</b> ディッツァの姉妹。ともに集団の中核を担った／ディツァーの姉妹で、24fpsのフィルム編集者。ニューヨーク出身。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 18,
+      "label": "ハウイ",
+      "title": "<div style='max-width:320px'><b>ハウイ</b><br><b>English:</b> Howie<br><b>重要度・分類:</b> 24fps・学生運動／脇役<br><b>説明:</b> 〈24フレーム／秒〉のメンバー。広報担当／24fpsの照明技師兼会計係。DLの依頼でフレネシを監視し、PR3崩壊時には救出に関わる。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 19,
+      "label": "クリシュナ",
+      "title": "<div style='max-width:320px'><b>クリシュナ</b><br><b>English:</b> Krishna<br><b>重要度・分類:</b> 24fps・学生運動／脇役<br><b>説明:</b> 〈24フレーム／秒〉のメンバー。編集中のBGM選曲役／24fpsの録音担当の女性。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 20,
+      "label": "ミラージュ",
+      "title": "<div style='max-width:320px'><b>ミラージュ</b><br><b>English:</b> Mirage<br><b>重要度・分類:</b> 24fps・学生運動／脇役<br><b>説明:</b> 〈24フレーム／秒〉のメンバー。占星術担当／24fpsの占星術担当。いったん占星術を捨てるが、のちに戻る。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 21,
+      "label": "スレッジ・ポティート",
+      "title": "<div style='max-width:320px'><b>スレッジ・ポティート</b><br><b>English:</b> Sledge Poteet<br><b>重要度・分類:</b> 24fps・学生運動／脇役<br><b>説明:</b> 〈24フレーム／秒〉のメンバー／24fpsのリガー（機材・索具担当）。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 22,
+      "label": "ジンクス",
+      "title": "<div style='max-width:320px'><b>ジンクス</b><br><b>English:</b> Jinx Atman<br><b>重要度・分類:</b> 24fps・学生運動／脇役<br><b>説明:</b> ウィード・アートマンの元妻／ウィードの妻。夫の不倫と政治運動への没入に巻き込まれる。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 23,
+      "label": "エリオットX",
+      "title": "<div style='max-width:320px'><b>エリオットX</b><br><b>English:</b> Elliott X<br><b>重要度・分類:</b> 24fps・学生運動／端役<br><b>説明:</b> 黒人急進派組織BAADの参謀長。レックスの愛車ポルシェを接収する／黒人急進組織BAADの首席補佐官。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 24,
+      "label": "フラッシュ",
+      "title": "<div style='max-width:320px'><b>フラッシュ</b><br><b>English:</b> Flash Fletcher<br><b>重要度・分類:</b> 主要人物周辺／準主要人物<br><b>説明:</b> フレネシの再婚相手。彼自身も情報提供者として連邦政府に飼われ、夫婦で証人保護制度の内側を漂流する／政府の秘密工作員・情報提供者。証人保護下でフレネシと暮らすが、予算打ち切りによって生活基盤を失う。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 25,
+      "label": "ジャスティン",
+      "title": "<div style='max-width:320px'><b>ジャスティン</b><br><b>English:</b> Justin Fletcher<br><b>重要度・分類:</b> 主要人物周辺／脇役<br><b>説明:</b> フレネシとフラッシュの息子。両親の言い争いをテレビの音で遮断して育つ少年／フレネシとフラッシュの幼い息子。プレーリーの異父弟。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 26,
+      "label": "ロイ・イッブル",
+      "title": "<div style='max-width:320px'><b>ロイ・イッブル</b><br><b>English:</b> Roy Ibble<br><b>重要度・分類:</b> 権力側／脇役<br><b>説明:</b> フラッシュを担当していた連邦捜査官。予算削減とともに二人を切り捨てる／フラッシュら政府協力者を扱う連邦側の担当官。予算・保護制度の打ち切りを伝える。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 27,
+      "label": "シスター・ロシェル",
+      "title": "<div style='max-width:320px'><b>シスター・ロシェル</b><br><b>English:</b> Sister Rochelle<br><b>重要度・分類:</b> くの一・日本／準主要人物<br><b>説明:</b> 「くの一求道会」を率いる尼僧にして忍術の達人。山中の隠れ家で女たちを鍛える／女性忍者の修行共同体SKAに属する年長者。DLに償いと責任を課し、タケシの保護を命じる。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 28,
+      "label": "猪四郎",
+      "title": "<div style='max-width:320px'><b>猪四郎</b><br><b>English:</b> Inoshiro Sensei<br><b>重要度・分類:</b> くの一・日本／準主要人物<br><b>説明:</b> 闇の暗殺忍術を極めた師匠。日本でDLに自ら開発した技のすべてを授けた／DLに忍術を教えた師。幼少期から彼女を訓練し、のちの行動規範に大きな影響を与える。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 29,
+      "label": "昇（ノボル）",
+      "title": "<div style='max-width:320px'><b>昇（ノボル）</b><br><b>English:</b> Noboru<br><b>重要度・分類:</b> くの一・日本／脇役<br><b>説明:</b> パチンコ屋でDLを見出し、師匠に引き合わせた男／イノシロウのために才能ある少女を探す人物。DLを見出す。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 30,
+      "label": "ムーディー・チェイステイン",
+      "title": "<div style='max-width:320px'><b>ムーディー・チェイステイン</b><br><b>English:</b> Moody Chastain<br><b>重要度・分類:</b> くの一・日本／脇役<br><b>説明:</b> DLの父。職業軍人で戦後は日本にも駐留した。家庭内では暴力的／軍警察官でDLの父。娘の幼少期と戦闘的な自己形成に影響する。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 31,
+      "label": "ノリーン",
+      "title": "<div style='max-width:320px'><b>ノリーン</b><br><b>English:</b> Norleen Chastain<br><b>重要度・分類:</b> くの一・日本／脇役<br><b>説明:</b> DLの母。夫の暴力に耐えながら暮らす／DLの母。終盤にタケシと会う。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 32,
+      "label": "輪々爪（ワワヅメ）教授",
+      "title": "<div style='max-width:320px'><b>輪々爪（ワワヅメ）教授</b><br><b>English:</b> Professor Wawazume<br><b>重要度・分類:</b> くの一・日本／脇役<br><b>説明:</b> 〈輪々爪生命＆非生命〉の代表取締役。タケシの恩人であり雇い主／タケシの師・雇用主にあたる人物。保険調査とカルマ調整の実務を背景で支える。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 33,
+      "label": "稔（ミノル）",
+      "title": "<div style='max-width:320px'><b>稔（ミノル）</b><br><b>English:</b> Minoru<br><b>重要度・分類:</b> くの一・日本／脇役<br><b>説明:</b> 政府お抱えの爆弾処理専門家。かつてタケシと調査員として組んでいた／日本政府の爆発物処理専門家。タケシと巨大な足跡状の破壊現場を調査し、その後失踪する。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 34,
+      "label": "オーソ・ボブ・デュラーン",
+      "title": "<div style='max-width:320px'><b>オーソ・ボブ・デュラーン</b><br><b>English:</b> Ortho Bob Dulang<br><b>重要度・分類:</b> シンデルロ／脇役<br><b>説明:</b> ベトナム帰りのシンデルロ（＝死んでいるようで死にきれない者）。カルマの清算をタケシに依頼する／サナトイドとなったベトナム帰還兵。タケシのカルマ調整の顧客となる。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 35,
+      "label": "エウセビオ・“ヴァート”・ゴメス",
+      "title": "<div style='max-width:320px'><b>エウセビオ・“ヴァート”・ゴメス</b><br><b>English:</b> Eusebio &quot;Vato&quot; Gómez<br><b>重要度・分類:</b> シンデルロ／準主要人物<br><b>説明:</b> 牽引会社〈V&amp;B〉の片割れ。生者の車も死者の魂も引っぱっていく／ブラッドと組むレッカー車運転手でベトナム帰還兵。タケシを助け、サナトイドたちの世界と現世をつなぐ。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 36,
+      "label": "クリーヴランド・“ブラッド”・ボニフォイ",
+      "title": "<div style='max-width:320px'><b>クリーヴランド・“ブラッド”・ボニフォイ</b><br><b>English:</b> Cleveland &quot;Blood&quot; Bonifoy<br><b>重要度・分類:</b> シンデルロ／準主要人物<br><b>説明:</b> 〈V&amp;B〉のもう片割れ。ヴァートと二人で境界線上の商売を営む／レッカー車運転手でベトナム帰還兵。ヴァトと組み、サナトイドやタケシ、終盤のヴォンドに関わる。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 37,
+      "label": "ティ・アン・トラン",
+      "title": "<div style='max-width:320px'><b>ティ・アン・トラン</b><br><b>English:</b> Thi Anh Tran<br><b>重要度・分類:</b> シンデルロ<br><b>説明:</b> ベトナム戦争中にヴァートとブラッドが後見を託されたベトナム人女性。牽引商会の三人目</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 38,
+      "label": "ラリー・エラズモ",
+      "title": "<div style='max-width:320px'><b>ラリー・エラズモ</b><br><b>English:</b> Dr. Larry Elasmo<br><b>重要度・分類:</b> シンデルロ／脇役<br><b>説明:</b> 格安歯科チェーンで成功した歯科医。シンデルロたちの周辺に出没する得体の知れない存在／ウィードのサナトイド的記憶に現れる信用歯科医。ブロック・ヴォンドを象徴する人物像として描かれる。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 39,
+      "label": "クレア",
+      "title": "<div style='max-width:320px'><b>クレア</b><br><b>English:</b> Claire<br><b>重要度・分類:</b> シンデルロ<br><b>説明:</b> サーシャの従姉。ヴァインランドに住み着いたシンデルロたちの事情に通じている</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 40,
+      "label": "ヴァン・ミータ",
+      "title": "<div style='max-width:320px'><b>ヴァン・ミータ</b><br><b>English:</b> Van Meter<br><b>重要度・分類:</b> 音楽・バンド／準主要人物<br><b>説明:</b> ゾイドのバンドのベーシスト。だらしないが切れない腐れ縁の友人／ゾイドの古い友人で、コルヴェアーズのベーシスト。ヴァインランドで共同体的な生活を続け、ゾイドを助ける。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 41,
+      "label": "スコット・ウーフ",
+      "title": "<div style='max-width:320px'><b>スコット・ウーフ</b><br><b>English:</b> Scott Oof<br><b>重要度・分類:</b> 音楽・バンド／脇役<br><b>説明:</b> ゾイドのバンドのギター兼ボーカル／ゾイドのサーフ・バンド、コルヴェアーズのリードギター兼ヴォーカル。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 42,
+      "label": "レフティ",
+      "title": "<div style='max-width:320px'><b>レフティ</b><br><b>English:</b> Lefty<br><b>重要度・分類:</b> 音楽・バンド／端役<br><b>説明:</b> ゾイドのバンドのドラマー／コルヴェアーズのドラマー。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 43,
+      "label": "イザヤ・ツーフォー",
+      "title": "<div style='max-width:320px'><b>イザヤ・ツーフォー</b><br><b>English:</b> Isaiah Two Four<br><b>重要度・分類:</b> 音楽・バンド／準主要人物<br><b>説明:</b> パンクバンドのメンバー。60年代文化に憧れ、「暴力センター」構想をゾイドに熱く売り込む／ビリー・バーフ＆ザ・ヴォミトーンズのドラマーでプレーリーの恋人。攻撃性を商品化するテーマパーク構想を持つ。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 44,
+      "label": "ビリー・ゲロー",
+      "title": "<div style='max-width:320px'><b>ビリー・ゲロー</b><br><b>English:</b> Billy Barf<br><b>重要度・分類:</b> 音楽・バンド／脇役<br><b>説明:</b> バンド「ヘドーズ」のリーダー。ウェイヴォーン家の結婚式では偽イタリア系楽団に化けて演奏する／ヘヴィメタル・バンド、ビリー・バーフ＆ザ・ヴォミトーンズのリード歌手。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 45,
+      "label": "レスター",
+      "title": "<div style='max-width:320px'><b>レスター</b><br><b>English:</b> Lester<br><b>重要度・分類:</b> 音楽・バンド／端役<br><b>説明:</b> 「ヘドーズ」のリズムギター／ヴォミトーンズのリズムギター奏者。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 46,
+      "label": "ウェンデル・“ムーチョ”・マース",
+      "title": "<div style='max-width:320px'><b>ウェンデル・“ムーチョ”・マース</b><br><b>English:</b> Wendell &quot;Mucho&quot; Maas<br><b>重要度・分類:</b> 音楽・メディア／脇役<br><b>説明:</b> 元ラジオDJから成り上がったレコード・プロデューサー。『競売ナンバー49の叫び』でエディパの夫だった男／レコード会社幹部・音楽プロデューサー。『競売ナンバー49の叫び』から再登場する人物で、コルヴェアーズ周辺の音楽史に関わる。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 47,
+      "label": "トリリウム",
+      "title": "<div style='max-width:320px'><b>トリリウム</b><br><b>English:</b> Trillium<br><b>重要度・分類:</b> 音楽・メディア<br><b>説明:</b> ムーチョの豪邸でゾイドと出会う女</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 48,
+      "label": "ヒューゴ・スプランクニック",
+      "title": "<div style='max-width:320px'><b>ヒューゴ・スプランクニック</b><br><b>English:</b> Hugo Splanchnick<br><b>重要度・分類:</b> 音楽・メディア<br><b>説明:</b> コカインで鼻をやられたムーチョを救い、ドラッグから足を洗わせた耳鼻科医</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 49,
+      "label": "アレクセイ",
+      "title": "<div style='max-width:320px'><b>アレクセイ</b><br><b>English:</b> Alexei<br><b>重要度・分類:</b> 音楽・バンド／端役<br><b>説明:</b> ソ連から密入国してきた「ヘドーズ」の熱狂的ファン。ウラジオストクでの彼らの人気を伝える／ヴァインランドに上陸したロシア人水兵兼ギタリスト。ヴォミトーンズのファン。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 50,
+      "label": "ラルフ・ウェイヴォーン・シニア",
+      "title": "<div style='max-width:320px'><b>ラルフ・ウェイヴォーン・シニア</b><br><b>English:</b> Ralph Wayvone Sr.<br><b>重要度・分類:</b> ウェイヴォーン家／準主要人物<br><b>説明:</b> ベイエリアの顔役。娘の結婚式のためにバンドを雇い、DLに裏の仕事を発注する／犯罪組織につながる実力者。娘の結婚式にDLを雇い、ブロック・ヴォンド暗殺を依頼する。</div>",
+      "size": 38,
+      "color": {
+        "background": "#f59e0b",
+        "border": "#b45309",
+        "highlight": {
+          "background": "#fbbf24",
+          "border": "#92400e"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 2
+    },
+    {
+      "id": 51,
+      "label": "ラルフ・ウェイヴォーン・ジュニア",
+      "title": "<div style='max-width:320px'><b>ラルフ・ウェイヴォーン・ジュニア</b><br><b>English:</b> Ralph Wayvone Jr.<br><b>重要度・分類:</b> ウェイヴォーン家／脇役<br><b>説明:</b> クラブ「キューカンバー・ラウンジ」の支配人。父の権勢で良い暮らしをしている／ウェイヴォーン家の若い世代。音楽関係者やゾイド周辺と接点を持つ。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 52,
+      "label": "ジェルソミーナ",
+      "title": "<div style='max-width:320px'><b>ジェルソミーナ</b><br><b>English:</b> Gelsomina Wayvone<br><b>重要度・分類:</b> ウェイヴォーン家<br><b>説明:</b> ウェイヴォーン・シニアの娘。豪勢な結婚式の主役</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 53,
+      "label": "ヴィンセント",
+      "title": "<div style='max-width:320px'><b>ヴィンセント</b><br><b>English:</b> Vincent Wayvone<br><b>重要度・分類:</b> ウェイヴォーン家<br><b>説明:</b> シニアの息子でジュニアの弟</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 54,
+      "label": "カーマイン・“２トン”・トルピディーニ",
+      "title": "<div style='max-width:320px'><b>カーマイン・“２トン”・トルピディーニ</b><br><b>English:</b> Carmine &quot;Two Ton&quot; Torpidini<br><b>重要度・分類:</b> ウェイヴォーン家<br><b>説明:</b> 「２トン」の異名を持つ大男。ウェイヴォーン家の用心棒</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 55,
+      "label": "ウィリス・チャンコ",
+      "title": "<div style='max-width:320px'><b>ウィリス・チャンコ</b><br><b>English:</b> Willis Chunko<br><b>重要度・分類:</b> 権力側／脇役<br><b>説明:</b> ヴァインランド郡保安官。大麻摘発に燃える／ヴァインランド郡保安官。CAMPの大規模な対麻薬作戦に協力する。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 56,
+      "label": "カール・ボップ",
+      "title": "<div style='max-width:320px'><b>カール・ボップ</b><br><b>English:</b> Karl Bopp<br><b>重要度・分類:</b> 権力側／脇役<br><b>説明:</b> 元ナチス空軍士官。麻薬撲滅のための航空偵察部隊を指揮する／元ドイツ空軍将校で、1984年のCAMP作戦に関わる契約要員。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 57,
+      "label": "ロスコ",
+      "title": "<div style='max-width:320px'><b>ロスコ</b><br><b>English:</b> Roscoe<br><b>重要度・分類:</b> 権力側／脇役<br><b>説明:</b> ブロック・ヴォンドの部下／ブロック・ヴォンドの作戦に同行する政府側の人物。終盤では監視ヘリコプターを操縦する。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 58,
+      "label": "ロン",
+      "title": "<div style='max-width:320px'><b>ロン</b><br><b>English:</b> Ron<br><b>重要度・分類:</b> 権力側<br><b>説明:</b> ブロックの策略でゾイドが逮捕された際、ゾイドを痛めつけた男</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 59,
+      "label": "エルムハースト",
+      "title": "<div style='max-width:320px'><b>エルムハースト</b><br><b>English:</b> Elmhurst<br><b>重要度・分類:</b> 権力側／脇役<br><b>説明:</b> 民事RICO法に商機を見出し、無償でゾイドの相談に乗る弁護士／ヴァインランドの弁護士。終盤の法的・行政的混乱に関わる。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 60,
+      "label": "デニス・ディープリー医師",
+      "title": "<div style='max-width:320px'><b>デニス・ディープリー医師</b><br><b>English:</b> Dr. Dennis Deeply<br><b>重要度・分類:</b> 映画・テレビ<br><b>説明:</b> テレビ中毒の治療施設に勤める医師。ヘクターの入院を担当する</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 61,
+      "label": "アーニー・トリガマン",
+      "title": "<div style='max-width:320px'><b>アーニー・トリガマン</b><br><b>English:</b> Ernie Triggerman<br><b>重要度・分類:</b> 映画・テレビ<br><b>説明:</b> 60年代ものの映画化に色気を見せるハリウッドのプロデューサー</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 62,
+      "label": "シド・リフトフ",
+      "title": "<div style='max-width:320px'><b>シド・リフトフ</b><br><b>English:</b> Sid Liftoff<br><b>重要度・分類:</b> 映画・テレビ／脇役<br><b>説明:</b> ヘクターとアーニーと組み、フレネシを主人公とする映画を企てる映画屋／テレビ映画のプロデューサー。ヘクターの企画を商業作品として進める。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 63,
+      "label": "デビ",
+      "title": "<div style='max-width:320px'><b>デビ</b><br><b>English:</b> Debbi<br><b>重要度・分類:</b> 映画・テレビ<br><b>説明:</b> ヘクターの元妻。テレビ漬けの夫に愛想を尽かして離婚を迫った</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 64,
+      "label": "フェリペ",
+      "title": "<div style='max-width:320px'><b>フェリペ</b><br><b>English:</b> Felipe<br><b>重要度・分類:</b> 映画・テレビ／脇役<br><b>説明:</b> ヘクターの義理の弟。62年型ポンティアック・ボンネビルを貸す／ヘクターの義兄弟。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 65,
+      "label": "デズモンド",
+      "title": "<div style='max-width:320px'><b>デズモンド</b><br><b>English:</b> Desmond<br><b>重要度・分類:</b> ヴァインランドの住人<br><b>説明:</b> ホイーラー家の犬。物語の最後、家へ帰り着く</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 66,
+      "label": "チェ",
+      "title": "<div style='max-width:320px'><b>チェ</b><br><b>English:</b> Che<br><b>重要度・分類:</b> ヴァインランドの住人／脇役<br><b>説明:</b> プレーリーの悪友。ショッピングモールでの万引き遠征の相棒／ロサンゼルスでプレーリーが知り合う十代の少女。モールを生活圏とし、母の恋人ラッキーに追われる。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 67,
+      "label": "フルール",
+      "title": "<div style='max-width:320px'><b>フルール</b><br><b>English:</b> Fleur<br><b>重要度・分類:</b> ヴァインランドの住人／端役<br><b>説明:</b> チェの友人。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 68,
+      "label": "スライド",
+      "title": "<div style='max-width:320px'><b>スライド</b><br><b>English:</b> Slide<br><b>重要度・分類:</b> ヴァインランドの住人<br><b>説明:</b> プレーリーの同級生</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 69,
+      "label": "ウェイド",
+      "title": "<div style='max-width:320px'><b>ウェイド</b><br><b>English:</b> Wade<br><b>重要度・分類:</b> ヴァインランドの住人<br><b>説明:</b> 若いころのサーシャとハッブにガレージを貸した人物</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 70,
+      "label": "ドッティ",
+      "title": "<div style='max-width:320px'><b>ドッティ</b><br><b>English:</b> Dotty<br><b>重要度・分類:</b> ヴァインランドの住人／脇役<br><b>説明:</b> ウェイドの連れ合い。同じくゲイツ夫妻の旧知／チェの祖母。ロサンゼルスの若者たちを取り巻く家族の一員。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 71,
+      "label": "バスター",
+      "title": "<div style='max-width:320px'><b>バスター</b><br><b>English:</b> Buster<br><b>重要度・分類:</b> ヴァインランドの住人／端役<br><b>説明:</b> 元きこりたちの集まるバーのマスター／ヴァインランドのバー「ログ・ジャム」の主人。ゾイドの毎年のパフォーマンスの舞台に関わる。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 72,
+      "label": "エルヴィッサ",
+      "title": "<div style='max-width:320px'><b>エルヴィッサ</b><br><b>English:</b> Elvissa<br><b>重要度・分類:</b> ヴァインランドの住人／脇役<br><b>説明:</b> 山の上に住む女。ゾイドの車を借りる／ゾイドの近隣住民。ヴァインランドの共同体の一員。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 73,
+      "label": "トレント",
+      "title": "<div style='max-width:320px'><b>トレント</b><br><b>English:</b> Trent<br><b>重要度・分類:</b> ヴァインランドの住人<br><b>説明:</b> ダットサンをキャンパーに改造して住む詩人兼画家</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 74,
+      "label": "ババ・ハヴァバナンダ",
+      "title": "<div style='max-width:320px'><b>ババ・ハヴァバナンダ</b><br><b>English:</b> Baba Havabanana<br><b>重要度・分類:</b> ヴァインランドの住人／端役<br><b>説明:</b> プレーリーのバイト先「菩提達磨ピザ寺院」の夜の店長／ボーディ・ダルマ・ピザ・テンプルの夜間責任者。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 75,
+      "label": "ミラド・ホッブズ",
+      "title": "<div style='max-width:320px'><b>ミラド・ホッブズ</b><br><b>English:</b> Millard Hobbs (The Marquis de Sod)<br><b>重要度・分類:</b> ヴァインランドの住人／脇役<br><b>説明:</b> 元役者で、造園会社の広告塔となった株主／俳優で芝生管理業者。ゾイドに仕事を与える地元人物。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 76,
+      "label": "ブロドウェン",
+      "title": "<div style='max-width:320px'><b>ブロドウェン</b><br><b>English:</b> Blodwen Hobbs<br><b>重要度・分類:</b> ヴァインランドの住人／端役<br><b>説明:</b> ミラドの妻／ミラード・ホッブズの妻。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 77,
+      "label": "RC",
+      "title": "<div style='max-width:320px'><b>RC</b><br><b>English:</b> RC<br><b>重要度・分類:</b> ヴァインランドの住人／脇役<br><b>説明:</b> 御霊川（ファントム・クリーク）沿いのザリガニ料理店の亭主／ゾイドの近隣住民。ムーンパイの夫でモーニングの父。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 78,
+      "label": "ムーンパイ",
+      "title": "<div style='max-width:320px'><b>ムーンパイ</b><br><b>English:</b> Moonpie<br><b>重要度・分類:</b> ヴァインランドの住人／脇役<br><b>説明:</b> RCの妻でゾイドの隣人。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 79,
+      "label": "デレク",
+      "title": "<div style='max-width:320px'><b>デレク</b><br><b>English:</b> Derek<br><b>重要度・分類:</b> ヴァインランドの住人／脇役<br><b>説明:</b> サーシャが車に乗せた、英国パンク風のヒッチハイカー／サーシャの英国人の恋人。終盤、家族の再会に同行する。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 80,
+      "label": "レナード",
+      "title": "<div style='max-width:320px'><b>レナード</b><br><b>English:</b> Leonard<br><b>重要度・分類:</b> ヴァインランドの住人／端役<br><b>説明:</b> フレネシがプレーリーを出産したときに立ち会った助産役の男／助産師。プレーリーの出産を取り上げる。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 81,
+      "label": "カズン・ジェイド",
+      "title": "<div style='max-width:320px'><b>カズン・ジェイド</b><br><b>English:</b> Cousin Jade<br><b>重要度・分類:</b> 脇役<br><b>説明:</b> ベッカー＝トラヴァース家の親族で、終盤の一族の集まりに登場するプレーリーの従姉妹。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 82,
+      "label": "アンクル・ピンキー",
+      "title": "<div style='max-width:320px'><b>アンクル・ピンキー</b><br><b>English:</b> Uncle Pinky<br><b>重要度・分類:</b> 脇役<br><b>説明:</b> ベッカー＝トラヴァース家の親族。終盤の一族の集まりに登場する。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 83,
+      "label": "メルローズ・ファイフ",
+      "title": "<div style='max-width:320px'><b>メルローズ・ファイフ</b><br><b>English:</b> Melrose Fife<br><b>重要度・分類:</b> 脇役<br><b>説明:</b> 1960年代にヘクターと組んでいた捜査官。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 84,
+      "label": "ゴーマン・フラフ（スペクター）",
+      "title": "<div style='max-width:320px'><b>ゴーマン・フラフ（スペクター）</b><br><b>English:</b> Gorman Flaff (The Specter)<br><b>重要度・分類:</b> 脇役<br><b>説明:</b> ベトナム戦争に従軍した兵士として語られる人物。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 85,
+      "label": "モー・アトマン",
+      "title": "<div style='max-width:320px'><b>モー・アトマン</b><br><b>English:</b> Moe Atman<br><b>重要度・分類:</b> 脇役<br><b>説明:</b> ウィードとジンクスの息子。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 86,
+      "label": "ペニー・アトマン",
+      "title": "<div style='max-width:320px'><b>ペニー・アトマン</b><br><b>English:</b> Penny Atman<br><b>重要度・分類:</b> 脇役<br><b>説明:</b> ウィードとジンクスの娘。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 87,
+      "label": "チキータ",
+      "title": "<div style='max-width:320px'><b>チキータ</b><br><b>English:</b> Chickeeta<br><b>重要度・分類:</b> 端役<br><b>説明:</b> ドクター・エラスモの受付係。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 88,
+      "label": "イルゼ",
+      "title": "<div style='max-width:320px'><b>イルゼ</b><br><b>English:</b> Ilse<br><b>重要度・分類:</b> 端役<br><b>説明:</b> ドクター・エラスモの歯科衛生士。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 89,
+      "label": "ゲルハルト",
+      "title": "<div style='max-width:320px'><b>ゲルハルト</b><br><b>English:</b> Gerhard<br><b>重要度・分類:</b> 端役<br><b>説明:</b> SKAの厨房スタッフ。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 90,
+      "label": "ミセス・ロ・フィント",
+      "title": "<div style='max-width:320px'><b>ミセス・ロ・フィント</b><br><b>English:</b> Mrs. Lo Finto<br><b>重要度・分類:</b> 端役<br><b>説明:</b> SKAの厨房スタッフ。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 91,
+      "label": "ドクター・オルニ",
+      "title": "<div style='max-width:320px'><b>ドクター・オルニ</b><br><b>English:</b> Dr. Oruni<br><b>重要度・分類:</b> 端役<br><b>説明:</b> ワワズメ社の会社医。タケシに施された忍術の診断に関わる。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 92,
+      "label": "クツシタ",
+      "title": "<div style='max-width:320px'><b>クツシタ</b><br><b>English:</b> Kutsushita<br><b>重要度・分類:</b> 端役<br><b>説明:</b> タケシとミノルの知人。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 93,
+      "label": "ロベリア",
+      "title": "<div style='max-width:320px'><b>ロベリア</b><br><b>English:</b> Lobelia<br><b>重要度・分類:</b> 脇役<br><b>説明:</b> 日本でDLと出会うトランスジェンダーのセックスワーカー。窮地のDLに関わる。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 94,
+      "label": "ロリ",
+      "title": "<div style='max-width:320px'><b>ロリ</b><br><b>English:</b> Lolli<br><b>重要度・分類:</b> 端役<br><b>説明:</b> ラルフ・ウェイヴォーンの義妹。結婚式の場面に登場する。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 95,
+      "label": "ミートフック",
+      "title": "<div style='max-width:320px'><b>ミートフック</b><br><b>English:</b> Meathook<br><b>重要度・分類:</b> 端役<br><b>説明:</b> ヴォミトーンズのベース奏者。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 96,
+      "label": "バッド",
+      "title": "<div style='max-width:320px'><b>バッド</b><br><b>English:</b> Bad<br><b>重要度・分類:</b> 端役<br><b>説明:</b> ヴォミトーンズのシンセサイザー奏者。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 97,
+      "label": "187",
+      "title": "<div style='max-width:320px'><b>187</b><br><b>English:</b> 187<br><b>重要度・分類:</b> 端役<br><b>説明:</b> ヴォミトーンズのホーン奏者。名前は数字で表記される。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 98,
+      "label": "モーニング",
+      "title": "<div style='max-width:320px'><b>モーニング</b><br><b>English:</b> Morning<br><b>重要度・分類:</b> 端役<br><b>説明:</b> RCとムーンパイの子。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 99,
+      "label": "ロータス",
+      "title": "<div style='max-width:320px'><b>ロータス</b><br><b>English:</b> Lotus<br><b>重要度・分類:</b> 端役<br><b>説明:</b> ムーンパイの赤ん坊として登場する。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 100,
+      "label": "シェリル",
+      "title": "<div style='max-width:320px'><b>シェリル</b><br><b>English:</b> Cheryl<br><b>重要度・分類:</b> 端役<br><b>説明:</b> ゾイドが使うチェーンソーを用意した人物。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 101,
+      "label": "ルメイ",
+      "title": "<div style='max-width:320px'><b>ルメイ</b><br><b>English:</b> Lemay<br><b>重要度・分類:</b> 端役<br><b>説明:</b> バーに居合わせる客。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 102,
+      "label": "マニュエル",
+      "title": "<div style='max-width:320px'><b>マニュエル</b><br><b>English:</b> Manuel<br><b>重要度・分類:</b> 脇役<br><b>説明:</b> 自動車塗装を錬金術のように扱う人物。タケシらの移動・車両世界に関わる。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 103,
+      "label": "ドウェイナ",
+      "title": "<div style='max-width:320px'><b>ドウェイナ</b><br><b>English:</b> Dwayna<br><b>重要度・分類:</b> 脇役<br><b>説明:</b> チェの母。ラッキーと交際している。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 104,
+      "label": "ラッキー",
+      "title": "<div style='max-width:320px'><b>ラッキー</b><br><b>English:</b> Lucky<br><b>重要度・分類:</b> 脇役<br><b>説明:</b> ドウェイナの恋人。チェを追い回す危険な人物。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 105,
+      "label": "エース",
+      "title": "<div style='max-width:320px'><b>エース</b><br><b>English:</b> Ace<br><b>重要度・分類:</b> 端役<br><b>説明:</b> ハベルの照明クルーに所属する照明技師。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 106,
+      "label": "ドミトリ",
+      "title": "<div style='max-width:320px'><b>ドミトリ</b><br><b>English:</b> Dmitri<br><b>重要度・分類:</b> 端役<br><b>説明:</b> ハベルの照明クルーに所属する照明技師。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 107,
+      "label": "アンバー",
+      "title": "<div style='max-width:320px'><b>アンバー</b><br><b>English:</b> Amber<br><b>重要度・分類:</b> 端役<br><b>説明:</b> SKA関係の法律事務に携わるパラリーガル。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 108,
+      "label": "グレース",
+      "title": "<div style='max-width:320px'><b>グレース</b><br><b>English:</b> Grace<br><b>重要度・分類:</b> 端役<br><b>説明:</b> 政府の証人保護・情報管理に関わるコンピューター操作員。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 109,
+      "label": "バービー",
+      "title": "<div style='max-width:320px'><b>バービー</b><br><b>English:</b> Barbie<br><b>重要度・分類:</b> 端役<br><b>説明:</b> フレネシが証人保護下で暮らすサンベルトの町の隣人。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 110,
+      "label": "グレッチェン",
+      "title": "<div style='max-width:320px'><b>グレッチェン</b><br><b>English:</b> Gretchen<br><b>重要度・分類:</b> 端役<br><b>説明:</b> カフナ航空の機内ラウンジで働くカクテル・ウェイトレス。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 111,
+      "label": "フィオナ",
+      "title": "<div style='max-width:320px'><b>フィオナ</b><br><b>English:</b> Fiona<br><b>重要度・分類:</b> 端役<br><b>説明:</b> カフナ航空の客室乗務員。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 112,
+      "label": "インガ",
+      "title": "<div style='max-width:320px'><b>インガ</b><br><b>English:</b> Inga<br><b>重要度・分類:</b> 端役<br><b>説明:</b> カフナ航空の客室乗務員。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    },
+    {
+      "id": 113,
+      "label": "オハラ中尉",
+      "title": "<div style='max-width:320px'><b>オハラ中尉</b><br><b>English:</b> Lieutenant O’Hara<br><b>重要度・分類:</b> 端役<br><b>説明:</b> テレビ作品『Say, Jim』に登場する「白人枠」の乗組員。作中作の架空人物。</div>",
+      "size": 18,
+      "color": {
+        "background": "#d1d5db",
+        "border": "#6b7280",
+        "highlight": {
+          "background": "#e5e7eb",
+          "border": "#4b5563"
+        }
+      },
+      "font": {
+        "size": 14,
+        "strokeWidth": 3,
+        "strokeColor": "#ffffff"
+      },
+      "shape": "dot",
+      "mass": 1
+    }
+  ],
+  "edges": [
+    {
+      "id": 1,
+      "from": 1,
+      "to": 2,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ゾイド・ホイーラー → プレーリー・ホイーラー: プレーリーの父</li><li>ゾイド・ホイーラー → プレーリー・ホイーラー: 父</li><li>プレーリー・ホイーラー → ゾイド・ホイーラー: ゾイドの娘</li><li>プレーリー・ホイーラー → ゾイド・ホイーラー: 父</li></ul></div>",
+      "width": 2.4,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 2,
+      "from": 1,
+      "to": 3,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ゾイド・ホイーラー → フレネシ・ゲイツ: フレネシの元夫</li><li>ゾイド・ホイーラー → フレネシ・ゲイツ: 元夫</li><li>フレネシ・ゲイツ → ゾイド・ホイーラー: ゾイドの元妻</li><li>フレネシ・ゲイツ → ゾイド・ホイーラー: 元夫</li></ul></div>",
+      "width": 2.4,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 3,
+      "from": 1,
+      "to": 4,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ゾイド・ホイーラー → ブロック・ヴォンド: ブロック・ヴォンドに人生を壊された側</li><li>ゾイド・ホイーラー → ブロック・ヴォンド: 一家を脅かす敵</li><li>ブロック・ヴォンド → ゾイド・ホイーラー: ゾイドの宿敵</li><li>ブロック・ヴォンド → ゾイド・ホイーラー: 敵対者</li></ul></div>",
+      "width": 2.4,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 4,
+      "from": 1,
+      "to": 7,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ゾイド・ホイーラー → ヘクター・スニーガ: ヘクターに長年つきまとわれる</li><li>ヘクター・スニーガ → ゾイド・ホイーラー: ゾイドの永遠の追跡者にして腐れ縁</li><li>ヘクター・スニーガ → ゾイド・ホイーラー: 監視・勧誘対象、奇妙な旧知</li></ul></div>",
+      "width": 2.05,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 5,
+      "from": 1,
+      "to": 8,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ゾイド・ホイーラー → サーシャ・ゲイツ: 元義母・協力者</li><li>サーシャ・ゲイツ → ゾイド・ホイーラー: 元婿・プレーリー養育の協力者</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 6,
+      "from": 1,
+      "to": 24,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>フラッシュ → ゾイド・ホイーラー: 妻の元夫</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 7,
+      "from": 1,
+      "to": 40,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ゾイド・ホイーラー → ヴァン・ミータ: ヴァン・ミータらとバンド仲間</li><li>ヴァン・ミータ → ゾイド・ホイーラー: ゾイドの旧友</li><li>ヴァン・ミータ → ゾイド・ホイーラー: 旧友・バンド仲間</li></ul></div>",
+      "width": 2.05,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 8,
+      "from": 1,
+      "to": 41,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>スコット・ウーフ → ゾイド・ホイーラー: ゾイドのバンド仲間</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 9,
+      "from": 1,
+      "to": 42,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>レフティ → ゾイド・ホイーラー: ゾイドのバンド仲間</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 10,
+      "from": 1,
+      "to": 43,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>イザヤ・ツーフォー → ゾイド・ホイーラー: ゾイドの義理の息子候補</li><li>イザヤ・ツーフォー → ゾイド・ホイーラー: 恋人の父</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 11,
+      "from": 1,
+      "to": 46,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ウェンデル・“ムーチョ”・マース → ゾイド・ホイーラー: ゾイドの旧知</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 12,
+      "from": 1,
+      "to": 59,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>エルムハースト → ゾイド・ホイーラー: ゾイドの法律相談相手</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 13,
+      "from": 1,
+      "to": 65,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>デズモンド → ゾイド・ホイーラー: ゾイドとプレーリーの飼い犬</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 14,
+      "from": 1,
+      "to": 71,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>バスター → ゾイド・ホイーラー: ゾイドの馴染み</li><li>バスター → ゾイド・ホイーラー: 客・騒動の当事者</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 15,
+      "from": 1,
+      "to": 72,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>エルヴィッサ → ゾイド・ホイーラー: ゾイドの知人</li><li>エルヴィッサ → ゾイド・ホイーラー: 隣人</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 16,
+      "from": 1,
+      "to": 73,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>トレント → ゾイド・ホイーラー: ゾイドの近所の住人</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 17,
+      "from": 1,
+      "to": 75,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ミラド・ホッブズ → ゾイド・ホイーラー: 雇用する知人</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 18,
+      "from": 1,
+      "to": 77,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>RC → ゾイド・ホイーラー: 隣人</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 19,
+      "from": 1,
+      "to": 78,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ムーンパイ → ゾイド・ホイーラー: 隣人</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 20,
+      "from": 1,
+      "to": 80,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>レナード → ゾイド・ホイーラー: 父</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 21,
+      "from": 1,
+      "to": 100,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>シェリル → ゾイド・ホイーラー: 道具を提供</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 22,
+      "from": 1,
+      "to": 101,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ルメイ → ゾイド・ホイーラー: 同じ場に居合わせる</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 23,
+      "from": 2,
+      "to": 3,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>プレーリー・ホイーラー → フレネシ・ゲイツ: フレネシの娘</li><li>プレーリー・ホイーラー → フレネシ・ゲイツ: 母</li><li>フレネシ・ゲイツ → プレーリー・ホイーラー: プレーリーの母</li><li>フレネシ・ゲイツ → プレーリー・ホイーラー: 娘</li></ul></div>",
+      "width": 2.4,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 24,
+      "from": 2,
+      "to": 4,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>プレーリー・ホイーラー → ブロック・ヴォンド: ブロックに狙われる</li><li>ブロック・ヴォンド → プレーリー・ホイーラー: 拉致・誘惑の対象</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 25,
+      "from": 2,
+      "to": 5,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>プレーリー・ホイーラー → DL・チェイステイン（ダリル・ルイーズ）: DLに保護される</li><li>プレーリー・ホイーラー → DL・チェイステイン（ダリル・ルイーズ）: 母の旧友・案内役</li><li>DL・チェイステイン（ダリル・ルイーズ） → プレーリー・ホイーラー: プレーリーの保護者</li><li>DL・チェイステイン（ダリル・ルイーズ） → プレーリー・ホイーラー: 保護・案内する相手</li></ul></div>",
+      "width": 2.4,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 26,
+      "from": 2,
+      "to": 6,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>文茂田武（タケシ） → プレーリー・ホイーラー: 協力相手</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 27,
+      "from": 2,
+      "to": 8,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>プレーリー・ホイーラー → サーシャ・ゲイツ: サーシャの孫</li><li>プレーリー・ホイーラー → サーシャ・ゲイツ: 祖母</li><li>サーシャ・ゲイツ → プレーリー・ホイーラー: プレーリーの祖母</li><li>サーシャ・ゲイツ → プレーリー・ホイーラー: 孫</li></ul></div>",
+      "width": 2.4,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 28,
+      "from": 2,
+      "to": 9,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ハッブ・ゲイツ → プレーリー・ホイーラー: 孫</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 29,
+      "from": 2,
+      "to": 10,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ジェス・トラヴァース → プレーリー・ホイーラー: プレーリーの曾祖父</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 30,
+      "from": 2,
+      "to": 11,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ユーラ・ベッカー → プレーリー・ホイーラー: 曾孫</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 31,
+      "from": 2,
+      "to": 14,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ウィード・アートマン → プレーリー・ホイーラー: 魂の近縁を示唆される相手</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 32,
+      "from": 2,
+      "to": 16,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ディッツァ・ピスク・フェルドマン → プレーリー・ホイーラー: プレーリーに映像を見せる</li><li>ディッツァ・ピスク・フェルドマン → プレーリー・ホイーラー: 記録を見せる相手</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 33,
+      "from": 2,
+      "to": 25,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ジャスティン → プレーリー・ホイーラー: プレーリーの異父弟</li><li>ジャスティン → プレーリー・ホイーラー: 異父姉</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 34,
+      "from": 2,
+      "to": 27,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>シスター・ロシェル → プレーリー・ホイーラー: プレーリーを匿う</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 35,
+      "from": 2,
+      "to": 39,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>クレア → プレーリー・ホイーラー: プレーリーに土地の事情を語る</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 36,
+      "from": 2,
+      "to": 43,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>プレーリー・ホイーラー → イザヤ・ツーフォー: イザヤの恋人</li><li>イザヤ・ツーフォー → プレーリー・ホイーラー: プレーリーの恋人</li><li>イザヤ・ツーフォー → プレーリー・ホイーラー: 恋人</li></ul></div>",
+      "width": 2.05,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 37,
+      "from": 2,
+      "to": 44,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ビリー・ゲロー → プレーリー・ホイーラー: 同行するグルーピー・友人</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 38,
+      "from": 2,
+      "to": 57,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ロスコ → プレーリー・ホイーラー: 監視対象</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 39,
+      "from": 2,
+      "to": 66,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>チェ → プレーリー・ホイーラー: プレーリーの友人</li><li>チェ → プレーリー・ホイーラー: 友人</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 40,
+      "from": 2,
+      "to": 67,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>フルール → プレーリー・ホイーラー: チェを介した知人</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 41,
+      "from": 2,
+      "to": 68,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>スライド → プレーリー・ホイーラー: プレーリーの同級生</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 42,
+      "from": 2,
+      "to": 74,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ババ・ハヴァバナンダ → プレーリー・ホイーラー: プレーリーの上司</li><li>ババ・ハヴァバナンダ → プレーリー・ホイーラー: 勤務先関係者</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 43,
+      "from": 2,
+      "to": 80,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>レナード → プレーリー・ホイーラー: 取り上げた子</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 44,
+      "from": 2,
+      "to": 81,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>カズン・ジェイド → プレーリー・ホイーラー: 従姉妹</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 45,
+      "from": 2,
+      "to": 82,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>アンクル・ピンキー → プレーリー・ホイーラー: 叔父または大叔父にあたる親族</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 46,
+      "from": 3,
+      "to": 4,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>フレネシ・ゲイツ → ブロック・ヴォンド: ブロックの愛人・情報提供者</li><li>フレネシ・ゲイツ → ブロック・ヴォンド: 愛人・支配者・捜査官</li><li>ブロック・ヴォンド → フレネシ・ゲイツ: フレネシを支配</li><li>ブロック・ヴォンド → フレネシ・ゲイツ: 愛人・協力者・支配対象</li></ul></div>",
+      "width": 2.4,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 47,
+      "from": 3,
+      "to": 5,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>フレネシ・ゲイツ → DL・チェイステイン（ダリル・ルイーズ）: DLの親友</li><li>フレネシ・ゲイツ → DL・チェイステイン（ダリル・ルイーズ）: 親友・元同志</li><li>DL・チェイステイン（ダリル・ルイーズ） → フレネシ・ゲイツ: フレネシの親友</li><li>DL・チェイステイン（ダリル・ルイーズ） → フレネシ・ゲイツ: 親友・元同志</li></ul></div>",
+      "width": 2.4,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 48,
+      "from": 3,
+      "to": 7,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ヘクター・スニーガ → フレネシ・ゲイツ: フレネシを映画の主役にしようとする</li><li>ヘクター・スニーガ → フレネシ・ゲイツ: 映画監督として起用</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 49,
+      "from": 3,
+      "to": 8,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>フレネシ・ゲイツ → サーシャ・ゲイツ: サーシャとハッブの娘</li><li>フレネシ・ゲイツ → サーシャ・ゲイツ: 母</li><li>サーシャ・ゲイツ → フレネシ・ゲイツ: フレネシの母</li><li>サーシャ・ゲイツ → フレネシ・ゲイツ: 娘</li></ul></div>",
+      "width": 2.4,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 50,
+      "from": 3,
+      "to": 9,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ハッブ・ゲイツ → フレネシ・ゲイツ: フレネシの父</li><li>ハッブ・ゲイツ → フレネシ・ゲイツ: 娘</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 51,
+      "from": 3,
+      "to": 10,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ジェス・トラヴァース → フレネシ・ゲイツ: フレネシの祖父</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 52,
+      "from": 3,
+      "to": 14,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>フレネシ・ゲイツ → ウィード・アートマン: ウィードの恋人</li><li>ウィード・アートマン → フレネシ・ゲイツ: フレネシの恋人</li><li>ウィード・アートマン → フレネシ・ゲイツ: 愛人・裏切り手</li></ul></div>",
+      "width": 2.05,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 53,
+      "from": 3,
+      "to": 15,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>フレネシ・ゲイツ → レックス・スナヴル: 操作した活動家</li><li>レックス・スナヴル → フレネシ・ゲイツ: フレネシとブロックに操られる</li><li>レックス・スナヴル → フレネシ・ゲイツ: 操作する者</li></ul></div>",
+      "width": 2.05,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 54,
+      "from": 3,
+      "to": 16,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ディッツァ・ピスク・フェルドマン → フレネシ・ゲイツ: フレネシとDLの元同志</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 55,
+      "from": 3,
+      "to": 18,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ハウイ → フレネシ・ゲイツ: フレネシとDLの同志</li><li>ハウイ → フレネシ・ゲイツ: 仲間・監視対象</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 56,
+      "from": 3,
+      "to": 19,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>クリシュナ → フレネシ・ゲイツ: フレネシとDLの同志</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 57,
+      "from": 3,
+      "to": 20,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ミラージュ → フレネシ・ゲイツ: フレネシとDLの同志</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 58,
+      "from": 3,
+      "to": 21,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>スレッジ・ポティート → フレネシ・ゲイツ: フレネシとDLの同志</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 59,
+      "from": 3,
+      "to": 22,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ジンクス → フレネシ・ゲイツ: 夫の愛人</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 60,
+      "from": 3,
+      "to": 24,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>フレネシ・ゲイツ → フラッシュ: フラッシュの妻</li><li>フラッシュ → フレネシ・ゲイツ: フレネシの夫</li><li>フラッシュ → フレネシ・ゲイツ: 夫</li></ul></div>",
+      "width": 2.05,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 61,
+      "from": 3,
+      "to": 25,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>フレネシ・ゲイツ → ジャスティン: 息子</li><li>ジャスティン → フレネシ・ゲイツ: フレネシとフラッシュの息子</li><li>ジャスティン → フレネシ・ゲイツ: 母</li></ul></div>",
+      "width": 2.05,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 62,
+      "from": 3,
+      "to": 26,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ロイ・イッブル → フレネシ・ゲイツ: 保護対象の家族</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 63,
+      "from": 3,
+      "to": 46,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ウェンデル・“ムーチョ”・マース → フレネシ・ゲイツ: フレネシの雇い主だった</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 64,
+      "from": 3,
+      "to": 62,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>シド・リフトフ → フレネシ・ゲイツ: 監督として起用される人物</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 65,
+      "from": 3,
+      "to": 80,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>レナード → フレネシ・ゲイツ: 産婦</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 66,
+      "from": 4,
+      "to": 7,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ブロック・ヴォンド → ヘクター・スニーガ: ヘクターの上位者</li><li>ヘクター・スニーガ → ブロック・ヴォンド: ブロックとは別系統の権力</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 67,
+      "from": 4,
+      "to": 14,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ウィード・アートマン → ブロック・ヴォンド: ブロックの標的</li><li>ウィード・アートマン → ブロック・ヴォンド: 弾圧者</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 68,
+      "from": 4,
+      "to": 15,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ブロック・ヴォンド → レックス・スナヴル: レックスを操ってウィード殺害を仕組む</li><li>ブロック・ヴォンド → レックス・スナヴル: 間接的に利用</li><li>レックス・スナヴル → ブロック・ヴォンド: フレネシを介して間接的に利用する権力者</li></ul></div>",
+      "width": 2.05,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 69,
+      "from": 4,
+      "to": 35,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>エウセビオ・“ヴァート”・ゴメス → ブロック・ヴォンド: 終盤に迎える人物</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 70,
+      "from": 4,
+      "to": 36,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>クリーヴランド・“ブラッド”・ボニフォイ → ブロック・ヴォンド: 終盤に迎える人物</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 71,
+      "from": 4,
+      "to": 38,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ラリー・エラズモ → ブロック・ヴォンド: 象徴的な対応関係</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 72,
+      "from": 4,
+      "to": 50,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ラルフ・ウェイヴォーン・シニア → ブロック・ヴォンド: 排除対象</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 73,
+      "from": 4,
+      "to": 57,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ロスコ → ブロック・ヴォンド: ブロックの手下</li><li>ロスコ → ブロック・ヴォンド: 上司・同僚</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 74,
+      "from": 5,
+      "to": 6,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>DL・チェイステイン（ダリル・ルイーズ） → 文茂田武（タケシ）: タケシの相棒兼恋人</li><li>文茂田武（タケシ） → DL・チェイステイン（ダリル・ルイーズ）: DLの相棒兼恋人</li><li>文茂田武（タケシ） → DL・チェイステイン（ダリル・ルイーズ）: 誤傷者・護衛・相棒</li></ul></div>",
+      "width": 2.05,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 75,
+      "from": 5,
+      "to": 18,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ハウイ → DL・チェイステイン（ダリル・ルイーズ）: 仲間・依頼者</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 76,
+      "from": 5,
+      "to": 27,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>DL・チェイステイン（ダリル・ルイーズ） → シスター・ロシェル: シスター・ロシェルと猪四郎の弟子</li><li>DL・チェイステイン（ダリル・ルイーズ） → シスター・ロシェル: 修道施設の指導者</li><li>シスター・ロシェル → DL・チェイステイン（ダリル・ルイーズ）: DLの師</li><li>シスター・ロシェル → DL・チェイステイン（ダリル・ルイーズ）: 指導・処罰する弟子</li></ul></div>",
+      "width": 2.4,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 77,
+      "from": 5,
+      "to": 28,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>猪四郎 → DL・チェイステイン（ダリル・ルイーズ）: DLの師匠</li><li>猪四郎 → DL・チェイステイン（ダリル・ルイーズ）: 弟子</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 78,
+      "from": 5,
+      "to": 29,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>昇（ノボル） → DL・チェイステイン（ダリル・ルイーズ）: DLと猪四郎をつなぐ</li><li>昇（ノボル） → DL・チェイステイン（ダリル・ルイーズ）: 発掘した弟子</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 79,
+      "from": 5,
+      "to": 30,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>DL・チェイステイン（ダリル・ルイーズ） → ムーディー・チェイステイン: ムーディーとノリーンの娘</li><li>ムーディー・チェイステイン → DL・チェイステイン（ダリル・ルイーズ）: DLの父</li><li>ムーディー・チェイステイン → DL・チェイステイン（ダリル・ルイーズ）: 娘</li></ul></div>",
+      "width": 2.05,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 80,
+      "from": 5,
+      "to": 31,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ノリーン → DL・チェイステイン（ダリル・ルイーズ）: DLの母</li><li>ノリーン → DL・チェイステイン（ダリル・ルイーズ）: 娘</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 81,
+      "from": 5,
+      "to": 34,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>オーソ・ボブ・デュラーン → DL・チェイステイン（ダリル・ルイーズ）: タケシの相棒</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 82,
+      "from": 5,
+      "to": 50,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ラルフ・ウェイヴォーン・シニア → DL・チェイステイン（ダリル・ルイーズ）: DLの雇い主</li><li>ラルフ・ウェイヴォーン・シニア → DL・チェイステイン（ダリル・ルイーズ）: 暗殺依頼の相手</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 83,
+      "from": 5,
+      "to": 93,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ロベリア → DL・チェイステイン（ダリル・ルイーズ）: 日本滞在時の接触相手</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 84,
+      "from": 6,
+      "to": 14,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ウィード・アートマン → 文茂田武（タケシ）: タケシの依頼人</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 85,
+      "from": 6,
+      "to": 32,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>文茂田武（タケシ） → 輪々爪（ワワヅメ）教授: 輪々爪教授の下で働いていた</li><li>輪々爪（ワワヅメ）教授 → 文茂田武（タケシ）: タケシの後見人</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 86,
+      "from": 6,
+      "to": 33,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>文茂田武（タケシ） → 稔（ミノル）: 調査仲間</li><li>稔（ミノル） → 文茂田武（タケシ）: タケシの旧友</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 87,
+      "from": 6,
+      "to": 34,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>オーソ・ボブ・デュラーン → 文茂田武（タケシ）: タケシの依頼人</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 88,
+      "from": 6,
+      "to": 38,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ラリー・エラズモ → 文茂田武（タケシ）: タケシの因縁の相手</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 89,
+      "from": 6,
+      "to": 92,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>文茂田武（タケシ） → クツシタ: 知人</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 90,
+      "from": 7,
+      "to": 60,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ヘクター・スニーガ → デニス・ディープリー医師: 治療者</li><li>デニス・ディープリー医師 → ヘクター・スニーガ: ヘクターの主治医</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 91,
+      "from": 7,
+      "to": 61,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>アーニー・トリガマン → ヘクター・スニーガ: ヘクターの相棒</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 92,
+      "from": 7,
+      "to": 63,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>デビ → ヘクター・スニーガ: ヘクターの元妻</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 93,
+      "from": 7,
+      "to": 64,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ヘクター・スニーガ → フェリペ: 義兄弟</li><li>フェリペ → ヘクター・スニーガ: ヘクターの親戚</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 94,
+      "from": 7,
+      "to": 83,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ヘクター・スニーガ → メルローズ・ファイフ: 1960年代の相棒</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 95,
+      "from": 8,
+      "to": 9,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>サーシャ・ゲイツ → ハッブ・ゲイツ: ハッブの妻</li><li>ハッブ・ゲイツ → サーシャ・ゲイツ: サーシャの夫</li><li>ハッブ・ゲイツ → サーシャ・ゲイツ: 元妻</li></ul></div>",
+      "width": 2.05,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 96,
+      "from": 8,
+      "to": 10,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>サーシャ・ゲイツ → ジェス・トラヴァース: ジェスとユーラの娘</li><li>ジェス・トラヴァース → サーシャ・ゲイツ: サーシャの父</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 97,
+      "from": 8,
+      "to": 11,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ユーラ・ベッカー → サーシャ・ゲイツ: サーシャの母</li><li>ユーラ・ベッカー → サーシャ・ゲイツ: 娘</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 98,
+      "from": 8,
+      "to": 13,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>エディ・エンリコ → サーシャ・ゲイツ: 歌手として関わる</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 99,
+      "from": 8,
+      "to": 39,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>クレア → サーシャ・ゲイツ: サーシャの従姉</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 100,
+      "from": 8,
+      "to": 79,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>サーシャ・ゲイツ → デレク: 恋人</li><li>デレク → サーシャ・ゲイツ: サーシャの拾った同乗者</li><li>デレク → サーシャ・ゲイツ: 恋人</li></ul></div>",
+      "width": 2.05,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 101,
+      "from": 10,
+      "to": 11,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ジェス・トラヴァース → ユーラ・ベッカー: ユーラの夫</li><li>ユーラ・ベッカー → ジェス・トラヴァース: ジェスの妻</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 102,
+      "from": 10,
+      "to": 12,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>クロッカー・“バッド”・スキャントリング → ジェス・トラヴァース: ジェスの加害者</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 103,
+      "from": 11,
+      "to": 13,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>エディ・エンリコ → ユーラ・ベッカー: ユーラの雇い主</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 104,
+      "from": 14,
+      "to": 15,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ウィード・アートマン → レックス・スナヴル: レックスに撃たれる</li><li>ウィード・アートマン → レックス・スナヴル: 同志から殺害者へ</li><li>レックス・スナヴル → ウィード・アートマン: ウィードを射殺</li></ul></div>",
+      "width": 2.05,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 105,
+      "from": 14,
+      "to": 22,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ウィード・アートマン → ジンクス: ジンクスの元夫</li><li>ジンクス → ウィード・アートマン: ウィードの元妻</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 106,
+      "from": 15,
+      "to": 23,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>エリオットX → レックス・スナヴル: レックスと接触</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 107,
+      "from": 16,
+      "to": 17,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ディッツァ・ピスク・フェルドマン → ズィピ・ピスク: ズィピの姉妹</li><li>ズィピ・ピスク → ディッツァ・ピスク・フェルドマン: ディッツァの姉妹</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 108,
+      "from": 24,
+      "to": 25,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>フラッシュ → ジャスティン: ジャスティンの父</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 109,
+      "from": 24,
+      "to": 26,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>フラッシュ → ロイ・イッブル: ロイ・イッブルに管理される</li><li>ロイ・イッブル → フラッシュ: フラッシュとフレネシの管理者</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 110,
+      "from": 27,
+      "to": 28,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>猪四郎 → シスター・ロシェル: 同じ忍術・修行圏</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 111,
+      "from": 28,
+      "to": 29,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>猪四郎 → 昇（ノボル）: 人材発掘役</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 112,
+      "from": 30,
+      "to": 31,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ムーディー・チェイステイン → ノリーン: ノリーンの夫</li><li>ノリーン → ムーディー・チェイステイン: ムーディーの妻</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 113,
+      "from": 32,
+      "to": 91,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>輪々爪（ワワヅメ）教授 → ドクター・オルニ: 組織の医師</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 114,
+      "from": 33,
+      "to": 92,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>稔（ミノル） → クツシタ: 共通の知人</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 115,
+      "from": 35,
+      "to": 37,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>エウセビオ・“ヴァート”・ゴメス → ティ・アン・トラン: ティ・アン・トランの後見人</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 116,
+      "from": 36,
+      "to": 37,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>クリーヴランド・“ブラッド”・ボニフォイ → ティ・アン・トラン: ティ・アン・トランの後見人</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 117,
+      "from": 38,
+      "to": 87,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ラリー・エラズモ → チキータ: 受付</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 118,
+      "from": 38,
+      "to": 88,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ラリー・エラズモ → イルゼ: 歯科衛生士</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 119,
+      "from": 40,
+      "to": 65,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ヴァン・ミータ → デズモンド: クロエの子</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 120,
+      "from": 43,
+      "to": 44,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>イザヤ・ツーフォー → ビリー・ゲロー: ビリー・ゲローのバンド仲間</li><li>ビリー・ゲロー → イザヤ・ツーフォー: イザヤのバンドのリーダー</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 121,
+      "from": 44,
+      "to": 45,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>レスター → ビリー・ゲロー: ビリー・ゲローのバンド仲間</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 122,
+      "from": 44,
+      "to": 49,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>アレクセイ → ビリー・ゲロー: ビリー・ゲローのファン</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 123,
+      "from": 50,
+      "to": 51,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ラルフ・ウェイヴォーン・シニア → ラルフ・ウェイヴォーン・ジュニア: 息子</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 124,
+      "from": 50,
+      "to": 94,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ラルフ・ウェイヴォーン・シニア → ロリ: 義妹または親族</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 125,
+      "from": 55,
+      "to": 56,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ウィリス・チャンコ → カール・ボップ: CAMP関係者</li><li>カール・ボップ → ウィリス・チャンコ: 地元警察側の協力者</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 126,
+      "from": 66,
+      "to": 67,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>チェ → フルール: 友人</li><li>フルール → チェ: チェの友人</li><li>フルール → チェ: 友人</li></ul></div>",
+      "width": 2.05,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 127,
+      "from": 66,
+      "to": 69,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>チェ → ウェイド: ウェイドとドッティの孫</li><li>ウェイド → チェ: チェの祖父</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 128,
+      "from": 66,
+      "to": 70,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>チェ → ドッティ: 祖母</li><li>ドッティ → チェ: チェの祖母</li><li>ドッティ → チェ: 孫</li></ul></div>",
+      "width": 2.05,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 129,
+      "from": 66,
+      "to": 103,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>チェ → ドウェイナ: 母</li><li>ドウェイナ → チェ: 娘</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 130,
+      "from": 66,
+      "to": 104,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>チェ → ラッキー: 母の恋人・追跡者</li><li>ラッキー → チェ: 追跡・威圧する相手</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 131,
+      "from": 70,
+      "to": 103,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ドッティ → ドウェイナ: 娘または親族</li><li>ドウェイナ → ドッティ: 母または親族</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 132,
+      "from": 75,
+      "to": 76,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ミラド・ホッブズ → ブロドウェン: ブロドウェンの夫</li><li>ブロドウェン → ミラド・ホッブズ: ミラドの妻</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 133,
+      "from": 77,
+      "to": 78,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>RC → ムーンパイ: ムーンパイの夫</li><li>RC → ムーンパイ: 妻</li><li>ムーンパイ → RC: RCの妻</li><li>ムーンパイ → RC: 夫</li></ul></div>",
+      "width": 2.4,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 134,
+      "from": 77,
+      "to": 98,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>RC → モーニング: 子</li><li>モーニング → RC: 父</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 135,
+      "from": 77,
+      "to": 99,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ロータス → RC: 家族</li></ul></div>",
+      "width": 1.35,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 136,
+      "from": 78,
+      "to": 98,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ムーンパイ → モーニング: 子</li><li>モーニング → ムーンパイ: 母</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 137,
+      "from": 78,
+      "to": 99,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ムーンパイ → ロータス: 赤ん坊</li><li>ロータス → ムーンパイ: 母</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 138,
+      "from": 85,
+      "to": 86,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>モー・アトマン → ペニー・アトマン: 姉妹</li><li>ペニー・アトマン → モー・アトマン: 兄弟</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 139,
+      "from": 87,
+      "to": 88,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>チキータ → イルゼ: 同僚</li><li>イルゼ → チキータ: 同僚</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 140,
+      "from": 89,
+      "to": 90,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ゲルハルト → ミセス・ロ・フィント: 同僚</li><li>ミセス・ロ・フィント → ゲルハルト: 同僚</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 141,
+      "from": 103,
+      "to": 104,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ドウェイナ → ラッキー: 恋人</li><li>ラッキー → ドウェイナ: 恋人</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 142,
+      "from": 105,
+      "to": 106,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>エース → ドミトリ: 同僚</li><li>ドミトリ → エース: 同僚</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#9ca3af",
+        "highlight": "#374151",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    }
+  ]
+};
+
+</script>
+  <script>
+    const container = document.getElementById('network');
+    const nodes = new vis.DataSet(networkData.nodes);
+    const edges = new vis.DataSet(networkData.edges);
+    const data = { nodes, edges };
+
+    const options = {
+      autoResize: true,
+      interaction: { hover: true, tooltipDelay: 120, multiselect: true, navigationButtons: true, keyboard: true },
+      physics: {
+        enabled: true,
+        solver: 'forceAtlas2Based',
+        forceAtlas2Based: { gravitationalConstant: -55, centralGravity: 0.015, springLength: 145, springConstant: 0.06 },
+        stabilization: { iterations: 250, fit: true }
+      },
+      nodes: {
+        borderWidth: 1.5,
+        shadow: true
+      },
+      edges: {
+        shadow: false,
+        selectionWidth: 2,
+        hoverWidth: 1.2
+      }
+    };
+
+    const network = new vis.Network(container, data, options);
+
+    function findNodeByLabel(query) {
+      const q = query.trim();
+      if (!q) return null;
+      const exact = networkData.nodes.find(n => n.label === q);
+      if (exact) return exact;
+      const partial = networkData.nodes.find(n => n.label.includes(q));
+      return partial || null;
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', () => {
+      const q = document.getElementById('searchBox').value;
+      const node = findNodeByLabel(q);
+      if (!node) {
+        alert('該当するキャラクターが見つかりませんでした。');
+        return;
+      }
+      network.selectNodes([node.id]);
+      network.focus(node.id, { scale: 1.25, animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
+    });
+
+    document.getElementById('searchBox').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('searchBtn').click();
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      network.unselectAll();
+      network.fit({ animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
+    });
+
+    document.getElementById('physicsToggle').addEventListener('change', (e) => {
+      network.setOptions({ physics: { enabled: e.target.checked } });
+    });
+  </script>
+</body>
+</html>
