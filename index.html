@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ヴァインランド 相関図</title>
   <script src="https://unpkg.com/vis-network@9.1.9/dist/vis-network.min.js"></script>
-  <link href="https://unpkg.com/vis-network@9.1.9/dist/dist/vis-network.min.css" rel="stylesheet" type="text/css" />
+  <link href="https://unpkg.com/vis-network@9.1.9/dist/vis-network.min.css" rel="stylesheet" type="text/css" />
   <style>
-    body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #111827; }
-    .app { display: grid; grid-template-rows: auto 1fr; height: 100vh; }
-    .toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 12px 16px; background: white; border-bottom: 1px solid #e5e7eb; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #111827; }
+    *, *::before, *::after { box-sizing: border-box; }
+    .app { position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .toolbar { flex: 0 0 auto; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 12px 16px; background: white; border-bottom: 1px solid #e5e7eb; }
     .toolbar input[type="text"] { padding: 8px 10px; min-width: 260px; border: 1px solid #cbd5e1; border-radius: 8px; }
     .toolbar button { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; cursor: pointer; }
     .toolbar button:hover { background: #f1f5f9; }
@@ -18,8 +20,27 @@
     .dot.large { width: 16px; height: 16px; background: #f59e0b; border: 1px solid #b45309; }
     .dot.medium { width: 12px; height: 12px; background: #60a5fa; border: 1px solid #2563eb; }
     .dot.small { width: 10px; height: 10px; background: #d1d5db; border: 1px solid #6b7280; }
-    #network { width: 100%; height: 100%; background: #f8fafc; }
+    #network { flex: 1 1 auto; min-width: 0; min-height: 0; width: 100%; height: auto; overflow: hidden; background: #f8fafc; }
     .status { font-size: 13px; color: #475569; }
+
+    #characterTooltip {
+      position: fixed;
+      z-index: 99999;
+      display: none;
+      width: min(360px, calc(100vw - 24px));
+      max-height: min(360px, calc(100vh - 24px));
+      overflow-y: auto;
+      padding: 12px 14px;
+      border: 1px solid #94a3b8;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.98);
+      color: #111827;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.24);
+      font-size: 14px;
+      line-height: 1.55;
+      pointer-events: none;
+    }
+    #characterTooltip b:first-child { font-size: 16px; }
   </style>
 </head>
 <body>
@@ -34,9 +55,10 @@
         <span><span class="dot medium"></span>準主要人物</span>
         <span><span class="dot small"></span>その他</span>
       </div>
-      <div class="status">ノード 113 / エッジ 142</div>
+      <div class="status">ノード 113 / エッジ 170</div>
     </div>
     <div id="network"></div>
+    <div id="characterTooltip" role="tooltip"></div>
   </div>
 
   <script>
@@ -4546,6 +4568,426 @@ const networkData = {
       "smooth": {
         "type": "dynamic"
       }
+    },
+    {
+      "id": 143,
+      "from": 47,
+      "to": 46,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>トリリウム ↔ ウェンデル・“ムーチョ”・マース: ムーチョの周辺人物</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 144,
+      "from": 48,
+      "to": 46,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ヒューゴ・スプランクニック ↔ ウェンデル・“ムーチョ”・マース: ムーチョを治療し、ドラッグから立ち直らせた恩人</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 145,
+      "from": 52,
+      "to": 50,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ジェルソミーナ ↔ ラルフ・ウェイヴォーン・シニア: 娘</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 146,
+      "from": 53,
+      "to": 50,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ヴィンセント ↔ ラルフ・ウェイヴォーン・シニア: 息子</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 147,
+      "from": 54,
+      "to": 50,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>カーマイン・“２トン”・トルピディーニ ↔ ラルフ・ウェイヴォーン・シニア: 用心棒・部下</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 148,
+      "from": 58,
+      "to": 4,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ロン ↔ ブロック・ヴォンド: ブロック側の実行役</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 149,
+      "from": 84,
+      "to": 36,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ゴーマン・フラフ（スペクター） ↔ クリーヴランド・“ブラッド”・ボニフォイ: ベトナム戦争の記憶を共有する退役軍人圏</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 150,
+      "from": 84,
+      "to": 35,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ゴーマン・フラフ（スペクター） ↔ エウセビオ・“ヴァート”・ゴメス: ベトナム戦争の記憶を共有する退役軍人圏</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 151,
+      "from": 95,
+      "to": 43,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ミートフック ↔ イザヤ・ツーフォー: ヴォミトーンズのバンド仲間</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 152,
+      "from": 95,
+      "to": 44,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>ミートフック ↔ ビリー・ゲロー: ヴォミトーンズのバンド仲間</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 153,
+      "from": 96,
+      "to": 43,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>バッド ↔ イザヤ・ツーフォー: ヴォミトーンズのバンド仲間</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 154,
+      "from": 96,
+      "to": 44,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>バッド ↔ ビリー・ゲロー: ヴォミトーンズのバンド仲間</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 155,
+      "from": 97,
+      "to": 43,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>187 ↔ イザヤ・ツーフォー: ヴォミトーンズのバンド仲間</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 156,
+      "from": 97,
+      "to": 44,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>187 ↔ ビリー・ゲロー: ヴォミトーンズのバンド仲間</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 157,
+      "from": 102,
+      "to": 6,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>マニュエル ↔ 文茂田武（タケシ）: 車両・移動を介した接点</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 158,
+      "from": 102,
+      "to": 35,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>マニュエル ↔ エウセビオ・“ヴァート”・ゴメス: 自動車関係の周辺人物</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 159,
+      "from": 107,
+      "to": 5,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>アンバー ↔ DL・チェイステイン（ダリル・ルイーズ）: SKA関係の法務担当</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 160,
+      "from": 108,
+      "to": 3,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>グレース ↔ フレネシ・ゲイツ: 証人保護データ上の対象</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 161,
+      "from": 108,
+      "to": 26,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>グレース ↔ ロイ・イッブル: 政府の証人保護・情報管理で接続</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 162,
+      "from": 109,
+      "to": 3,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>バービー ↔ フレネシ・ゲイツ: 証人保護下の町の隣人</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 163,
+      "from": 109,
+      "to": 24,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>バービー ↔ フラッシュ: 証人保護下の町の隣人</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 164,
+      "from": 110,
+      "to": 1,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>グレッチェン ↔ ゾイド・ホイーラー: 航空移動時の接点</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 165,
+      "from": 110,
+      "to": 6,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>グレッチェン ↔ 文茂田武（タケシ）: 航空移動時の接点</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 166,
+      "from": 111,
+      "to": 1,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>フィオナ ↔ ゾイド・ホイーラー: カフナ航空の乗客</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 167,
+      "from": 111,
+      "to": 6,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>フィオナ ↔ 文茂田武（タケシ）: カフナ航空の乗客</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 168,
+      "from": 112,
+      "to": 1,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>インガ ↔ ゾイド・ホイーラー: カフナ航空の乗客</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 169,
+      "from": 112,
+      "to": 6,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>インガ ↔ 文茂田武（タケシ）: カフナ航空の乗客</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
+    },
+    {
+      "id": 170,
+      "from": 113,
+      "to": 7,
+      "title": "<div style='max-width:360px'><b>関係</b><ul><li>オハラ中尉 ↔ ヘクター・スニーガ: テレビ依存・作中作を介した関係</li></ul></div>",
+      "width": 1.7,
+      "color": {
+        "color": "#7c8da5",
+        "highlight": "#263547",
+        "hover": "#111827"
+      },
+      "smooth": {
+        "type": "dynamic"
+      }
     }
   ]
 };
@@ -4553,6 +4995,26 @@ const networkData = {
 </script>
   <script>
     const container = document.getElementById('network');
+
+    // 重要度の判定は「準主要人物」を先に行う。
+    // 「準主要人物」には文字列として「主要人物」が含まれるため、順序が逆だと全て最大サイズになる。
+    networkData.nodes.forEach((node) => {
+      const info = node.title || '';
+      if (info.includes('準主要人物')) {
+        node.size = 28;
+        node.mass = 1.4;
+        node.color = { background: '#60a5fa', border: '#2563eb', highlight: { background: '#93c5fd', border: '#1d4ed8' } };
+      } else if (info.includes('主要人物')) {
+        node.size = 38;
+        node.mass = 2;
+        node.color = { background: '#f59e0b', border: '#b45309', highlight: { background: '#fbbf24', border: '#92400e' } };
+      } else {
+        node.size = 18;
+        node.mass = 1;
+        node.color = { background: '#d1d5db', border: '#6b7280', highlight: { background: '#e5e7eb', border: '#4b5563' } };
+      }
+    });
+
     const nodes = new vis.DataSet(networkData.nodes);
     const edges = new vis.DataSet(networkData.edges);
     const data = { nodes, edges };
@@ -4578,6 +5040,57 @@ const networkData = {
     };
 
     const network = new vis.Network(container, data, options);
+
+
+    // vis-network標準のtitleツールチップは、埋め込みプレビュー等で表示されないことがある。
+    // そのため、hoverNodeイベントから独自の解説ボックスを表示する。
+    const characterTooltip = document.getElementById('characterTooltip');
+
+    function placeTooltip(domX, domY) {
+      const rect = container.getBoundingClientRect();
+      const gap = 16;
+      let left = rect.left + domX + gap;
+      let top = rect.top + domY + gap;
+
+      characterTooltip.style.display = 'block';
+      const tipRect = characterTooltip.getBoundingClientRect();
+
+      if (left + tipRect.width > window.innerWidth - 8) {
+        left = rect.left + domX - tipRect.width - gap;
+      }
+      if (top + tipRect.height > window.innerHeight - 8) {
+        top = rect.top + domY - tipRect.height - gap;
+      }
+
+      characterTooltip.style.left = Math.max(8, left) + 'px';
+      characterTooltip.style.top = Math.max(8, top) + 'px';
+    }
+
+    network.on('hoverNode', (params) => {
+      const node = nodes.get(params.node);
+      if (!node) return;
+      characterTooltip.innerHTML = node.title || ('<b>' + node.label + '</b>');
+      placeTooltip(params.pointer.DOM.x, params.pointer.DOM.y);
+    });
+
+    network.on('blurNode', () => {
+      characterTooltip.style.display = 'none';
+    });
+
+    network.on('dragStart', () => {
+      characterTooltip.style.display = 'none';
+    });
+
+    container.addEventListener('mouseleave', () => {
+      characterTooltip.style.display = 'none';
+    });
+
+    // 初期配置が落ち着いたら物理演算を止め、再描画とCPU使用を抑える。
+    network.once('stabilizationIterationsDone', () => {
+      network.setOptions({ physics: { enabled: false } });
+      document.getElementById('physicsToggle').checked = false;
+      network.fit({ animation: { duration: 350, easingFunction: 'easeInOutQuad' } });
+    });
 
     function findNodeByLabel(query) {
       const q = query.trim();
